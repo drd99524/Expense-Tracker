@@ -8,52 +8,84 @@ import {
   useState,
   type ReactNode,
 } from "react";
+import { toPublicUser, type PublicUser } from "@/lib/auth-user";
 import { createClient } from "@/lib/supabase/client";
 
-type AuthUser = {
-  id: string;
-  name: string;
+type AuthUser = PublicUser;
+
+type SignInInput = {
   email: string;
+  password: string;
+};
+
+type SignUpInput = {
+  email: string;
+  password: string;
 };
 
 type AuthResult = {
   ok: boolean;
   error?: string;
+  message?: string;
+  needsEmailConfirmation?: boolean;
 };
 
 type AuthContextValue = {
   isReady: boolean;
   isAuthenticated: boolean;
   user: AuthUser | null;
-  signInWithGoogle: (nextPath?: string) => Promise<AuthResult>;
+  signIn: (input: SignInInput) => Promise<AuthResult>;
+  signUp: (input: SignUpInput) => Promise<AuthResult>;
   signOut: () => Promise<void>;
 };
 
 const AuthContext = createContext<AuthContextValue | null>(null);
 
+function normalizeEmail(value: string) {
+  return value.trim().toLowerCase();
+}
+
+function normalizeAuthError(error: string) {
+  const value = error.trim();
+
+  if (value === "Invalid login credentials") {
+    return "Incorrect email or password.";
+  }
+
+  if (value === "User already registered") {
+    return "An account with that email already exists.";
+  }
+
+  if (value === "Email not confirmed") {
+    return "Check your inbox to confirm your email before signing in.";
+  }
+
+  return value || "Request failed.";
+}
+
 export function AuthProvider({ children }: { children: ReactNode }) {
+  const supabase = useMemo(() => createClient(), []);
   const [user, setUser] = useState<AuthUser | null>(null);
   const [isReady, setIsReady] = useState(false);
 
   useEffect(() => {
-    let isCancelled = false;
+    let isActive = true;
 
     async function loadSession() {
       try {
-        const response = await fetch("/api/auth/session", {
-          cache: "no-store",
-        });
-        const body = (await response.json()) as { user: AuthUser | null };
+        const {
+          data: { user: sessionUser },
+        } = await supabase.auth.getUser();
 
-        if (!isCancelled) {
-          setUser(body.user);
+        if (isActive) {
+          setUser(sessionUser ? toPublicUser(sessionUser) : null);
         }
       } catch {
-        if (!isCancelled) {
+        if (isActive) {
           setUser(null);
         }
       } finally {
-        if (!isCancelled) {
+        if (isActive) {
           setIsReady(true);
         }
       }
@@ -61,53 +93,96 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     void loadSession();
 
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (!isActive) {
+        return;
+      }
+
+      setUser(session?.user ? toPublicUser(session.user) : null);
+      setIsReady(true);
+    });
+
     return () => {
-      isCancelled = true;
+      isActive = false;
+      subscription.unsubscribe();
     };
-  }, []);
+  }, [supabase]);
 
   const value = useMemo<AuthContextValue>(
     () => ({
       isReady,
       isAuthenticated: user !== null,
       user,
-      async signInWithGoogle(nextPath = "/") {
+      async signIn(input) {
         try {
-          const supabase = createClient();
-          const redirectTo = `${window.location.origin}/auth/callback?next=${encodeURIComponent(nextPath)}`;
-          const { error } = await supabase.auth.signInWithOAuth({
-            provider: "google",
-            options: {
-              redirectTo,
-            },
+          const { data, error } = await supabase.auth.signInWithPassword({
+            email: normalizeEmail(input.email),
+            password: input.password,
           });
 
           if (error) {
             return {
               ok: false,
-              error: error.message || "Unable to start Google sign-in.",
+              error: normalizeAuthError(error.message),
             };
           }
+
+          setUser(data.user ? toPublicUser(data.user) : null);
 
           return { ok: true };
         } catch {
           return {
             ok: false,
-            error: "Unable to start Google sign-in right now.",
+            error: "Unable to sign in right now.",
+          };
+        }
+      },
+      async signUp(input) {
+        try {
+          const { data, error } = await supabase.auth.signUp({
+            email: normalizeEmail(input.email),
+            password: input.password,
+          });
+
+          if (error) {
+            return {
+              ok: false,
+              error: normalizeAuthError(error.message),
+            };
+          }
+
+          const nextUser = data.user ? toPublicUser(data.user) : null;
+          const hasSession = Boolean(data.session);
+
+          if (hasSession && nextUser) {
+            setUser(nextUser);
+            return { ok: true };
+          }
+
+          return {
+            ok: true,
+            needsEmailConfirmation: true,
+            message:
+              "Account created. Check your email to confirm your address before signing in.",
+          };
+        } catch {
+          return {
+            ok: false,
+            error: "Unable to create your account right now.",
           };
         }
       },
       async signOut() {
         try {
-          await fetch("/api/auth/signout", {
-            method: "POST",
-          });
+          await supabase.auth.signOut();
         } finally {
           setUser(null);
         }
       },
     }),
-    [isReady, user],
+    [isReady, supabase, user],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

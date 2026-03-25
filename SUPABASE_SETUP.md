@@ -1,4 +1,4 @@
-# Supabase + Google + Vercel Setup
+# Supabase + Email Auth + Vercel Setup
 
 ## 1. Environment variables
 
@@ -19,38 +19,16 @@ This creates:
 - `public.expenses`
 - Row Level Security policies so each signed-in user can only access their own rows
 
-## 3. Supabase Google provider
+## 3. Supabase authentication setup
 
 In Supabase:
 
-1. Go to `Authentication > Providers > Google`
-2. Enable Google
-3. Paste your Google OAuth client ID and secret
+1. Keep the email/password provider enabled.
+2. Decide whether new users must confirm their email before the first sign-in.
+3. If you want immediate account access for a personal project, disable email confirmation in your auth settings.
+4. If you plan to use confirmation or password-reset emails later, set your local and production site URLs in the auth settings first.
 
-In `Authentication > URL Configuration`:
-
-- `Site URL`
-  - local: `http://localhost:3000`
-  - production: your Vercel production URL
-- `Redirect URLs`
-  - `http://localhost:3000/auth/callback`
-  - `https://YOUR-PRODUCTION-DOMAIN/auth/callback`
-  - add your Vercel preview domain callback too if you want preview deployments to auth correctly
-
-## 4. Google Cloud OAuth app
-
-In Google Cloud Console:
-
-1. Create an OAuth 2.0 Web application
-2. Add Authorized JavaScript origins:
-   - `http://localhost:3000`
-   - `https://YOUR-PRODUCTION-DOMAIN`
-3. Add Authorized redirect URIs:
-   - `https://wrpbfaktpqzjprxqsauz.supabase.co/auth/v1/callback`
-
-Supabase handles the provider callback. Your app handles the final session exchange at `/auth/callback`.
-
-## 5. Vercel
+## 4. Vercel
 
 1. Import the repo into Vercel
 2. Set:
@@ -59,8 +37,8 @@ Supabase handles the provider callback. Your app handles the final session excha
 3. Add the same two env vars from step 1
 4. Deploy
 
-## 6. Notes
+## 5. Notes
 
-- This app now uses Google-only auth.
-- No email sender or auth domain setup is required for login.
-- App data is stored in Supabase and protected by RLS policies.
+- This app uses Supabase Auth with manual email-and-password accounts.
+- Budgets and expenses are stored in Supabase and protected by row-level security policies.
+- If email confirmation is disabled, new users can sign in immediately after registering.

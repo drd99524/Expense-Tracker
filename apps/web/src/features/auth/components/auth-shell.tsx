@@ -14,7 +14,7 @@ export function AuthShell({ children }: AuthShellProps) {
 
   useEffect(() => {
     if (isReady && isAuthenticated) {
-      router.replace("/");
+      router.replace("/dashboard");
     }
   }, [isAuthenticated, isReady, router]);
 
@@ -29,9 +29,7 @@ export function AuthShell({ children }: AuthShellProps) {
         <div className="absolute bottom-16 right-0 h-48 w-48 rounded-full bg-white/[0.04] blur-3xl" />
       </div>
 
-      <div className="relative mx-auto w-full max-w-md">
-        {children}
-      </div>
+      <div className="relative mx-auto w-full max-w-md">{children}</div>
     </main>
   );
 }

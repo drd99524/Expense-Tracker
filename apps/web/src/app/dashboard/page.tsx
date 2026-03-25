@@ -1,15 +1,15 @@
 import { redirect } from "next/navigation";
+import { DashboardScreen } from "@/features/dashboard/screens/dashboard-screen";
 import { getServerSessionUser } from "@/lib/server/session";
-import { LoginScreen } from "@/features/auth/screens/login-screen";
 
 export const dynamic = "force-dynamic";
 
-export default async function LoginPage() {
+export default async function DashboardPage() {
   const user = await getServerSessionUser();
 
-  if (user) {
-    redirect("/dashboard");
+  if (!user) {
+    redirect("/login");
   }
 
-  return <LoginScreen />;
+  return <DashboardScreen />;
 }

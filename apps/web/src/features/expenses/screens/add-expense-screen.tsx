@@ -65,7 +65,7 @@ export function AddExpenseScreen() {
     }
 
     startTransition(() => {
-      router.replace("/");
+      router.replace("/dashboard");
     });
   }
 

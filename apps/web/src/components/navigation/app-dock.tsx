@@ -40,13 +40,7 @@ function HomeIcon(props: React.SVGProps<SVGSVGElement>) {
 function AddIcon(props: React.SVGProps<SVGSVGElement>) {
   return (
     <svg viewBox="0 0 24 24" fill="none" {...props}>
-      <circle
-        cx="12"
-        cy="12"
-        r="8"
-        stroke="currentColor"
-        strokeWidth="1.7"
-      />
+      <circle cx="12" cy="12" r="8" stroke="currentColor" strokeWidth="1.7" />
       <path
         d="M12 8.5V15.5"
         stroke="currentColor"
@@ -90,9 +84,9 @@ function HistoryIcon(props: React.SVGProps<SVGSVGElement>) {
 }
 
 const navItems: readonly NavItem[] = [
-  { href: "/", label: "Home", icon: HomeIcon },
+  { href: "/dashboard", label: "Home", icon: HomeIcon },
   { href: "/add-expense", label: "Add expense", icon: AddIcon, featured: true },
-  { href: "/history", label: "View history", icon: HistoryIcon }
+  { href: "/history", label: "View history", icon: HistoryIcon },
 ];
 
 export function AppDock({ theme }: AppDockProps) {
@@ -118,7 +112,7 @@ export function AppDock({ theme }: AppDockProps) {
                   : active
                     ? `${theme.subtleBorderClass} bg-white/[0.06]`
                     : "border-transparent bg-transparent",
-                active ? theme.accentTextClass : "text-white/55"
+                active ? theme.accentTextClass : "text-white/55",
               )}
             >
               <item.icon className="h-6 w-6 transition-transform duration-200 group-hover:scale-110" />

@@ -8,11 +8,12 @@ import "./globals.css";
 
 export const metadata: Metadata = {
   title: "Expense Tracker",
-  description: "Personal expense tracker"
+  description:
+    "Expense Tracker is a secure budgeting and expense tracking web app with private accounts, public policy pages, and persistent user dashboards.",
 };
 
 export default function RootLayout({
-  children
+  children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {

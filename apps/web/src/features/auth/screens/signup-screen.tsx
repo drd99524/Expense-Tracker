@@ -11,35 +11,53 @@ function isValidEmail(value: string) {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
 }
 
-export function LoginScreen() {
+export function SignupScreen() {
   const router = useRouter();
-  const { signIn } = useAuth();
-  const [errorMessage, setErrorMessage] = useState("");
+  const { signUp } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [errorMessage, setErrorMessage] = useState("");
+  const [successMessage, setSuccessMessage] = useState("");
   const [isPending, startTransition] = useTransition();
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setErrorMessage("");
+    setSuccessMessage("");
 
     if (!isValidEmail(email)) {
       setErrorMessage("Enter a valid email address.");
       return;
     }
 
-    if (!password) {
-      setErrorMessage("Enter your password.");
+    if (password.length < 8) {
+      setErrorMessage("Use a password with at least 8 characters.");
       return;
     }
 
-    const result = await signIn({
+    if (password !== confirmPassword) {
+      setErrorMessage("Passwords do not match.");
+      return;
+    }
+
+    const result = await signUp({
       email,
       password,
     });
 
     if (!result.ok) {
-      setErrorMessage(result.error ?? "Unable to sign in.");
+      setErrorMessage(result.error ?? "Unable to create your account.");
+      return;
+    }
+
+    if (result.needsEmailConfirmation) {
+      setSuccessMessage(
+        result.message ??
+          "Account created. Check your email to confirm your address before signing in.",
+      );
+      setPassword("");
+      setConfirmPassword("");
       return;
     }
 
@@ -53,14 +71,15 @@ export function LoginScreen() {
     <AuthShell>
       <div className="rounded-[34px] border border-white/10 bg-[#060606]/95 p-6 shadow-[0_24px_64px_rgba(0,0,0,0.45)]">
         <p className="text-[11px] uppercase tracking-[0.22em] text-white/35">
-          Sign In
+          Sign Up
         </p>
         <h1 className="mt-2 text-3xl font-semibold text-white">
-          Welcome back
+          Create your account
         </h1>
         <p className="mt-3 text-sm leading-6 text-white/60">
-          Sign in with the email address and password attached to your account
-          to access your budgets, expense history, and saved dashboard data.
+          Register with your email address and a password to create a private
+          account. Your budgets, expenses, and history stay isolated to the
+          account tied to that email.
         </p>
 
         <form className="mt-6 space-y-4" onSubmit={handleSubmit}>
@@ -74,6 +93,7 @@ export function LoginScreen() {
               onChange={(event) => {
                 setEmail(event.target.value);
                 setErrorMessage("");
+                setSuccessMessage("");
               }}
               className="mt-2 w-full rounded-[22px] border border-white/10 bg-white/[0.03] px-4 py-4 text-white outline-none placeholder:text-white/20"
               placeholder="you@example.com"
@@ -82,18 +102,42 @@ export function LoginScreen() {
 
           <PasswordField
             label="Password"
-            autoComplete="current-password"
+            autoComplete="new-password"
             value={password}
             disabled={isPending}
             onChange={(event) => {
               setPassword(event.target.value);
               setErrorMessage("");
+              setSuccessMessage("");
             }}
-            placeholder="Your password"
+            placeholder="Create a password"
           />
+
+          <PasswordField
+            label="Confirm password"
+            autoComplete="new-password"
+            value={confirmPassword}
+            disabled={isPending}
+            onChange={(event) => {
+              setConfirmPassword(event.target.value);
+              setErrorMessage("");
+              setSuccessMessage("");
+            }}
+            placeholder="Repeat your password"
+          />
+
+          <p className="text-xs leading-5 text-white/45">
+            Use at least 8 characters. If email confirmation is enabled in your
+            Supabase project, you will need to confirm your address before your
+            first sign-in.
+          </p>
 
           {errorMessage ? (
             <p className="text-sm text-red-300">{errorMessage}</p>
+          ) : null}
+
+          {successMessage ? (
+            <p className="text-sm text-cyan-200">{successMessage}</p>
           ) : null}
 
           <button
@@ -101,15 +145,15 @@ export function LoginScreen() {
             disabled={isPending}
             className="inline-flex w-full items-center justify-center rounded-[22px] border border-cyan-400/40 bg-cyan-400/10 px-4 py-4 text-sm font-medium text-cyan-300 disabled:opacity-60"
           >
-            {isPending ? "Signing in..." : "Sign in"}
+            {isPending ? "Creating account..." : "Create account"}
           </button>
         </form>
 
         <Link
-          href="/signup"
+          href="/login"
           className="mt-3 inline-flex w-full items-center justify-center rounded-[22px] border border-white/10 bg-white/[0.03] px-4 py-4 text-sm font-medium text-white/75"
         >
-          Create a new account
+          Already have an account? Sign in
         </Link>
       </div>
     </AuthShell>
