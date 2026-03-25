@@ -1,19 +1,26 @@
 function requireEnv(
+  value: string | undefined,
   name: "NEXT_PUBLIC_SUPABASE_URL" | "NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY",
 ) {
-  const value = process.env[name]?.trim();
+  const normalizedValue = value?.trim();
 
-  if (!value) {
+  if (!normalizedValue) {
     throw new Error(`Missing required environment variable: ${name}`);
   }
 
-  return value;
+  return normalizedValue;
 }
 
 export function getSupabaseUrl() {
-  return requireEnv("NEXT_PUBLIC_SUPABASE_URL");
+  return requireEnv(
+    process.env.NEXT_PUBLIC_SUPABASE_URL,
+    "NEXT_PUBLIC_SUPABASE_URL",
+  );
 }
 
 export function getSupabasePublishableKey() {
-  return requireEnv("NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY");
+  return requireEnv(
+    process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY,
+    "NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY",
+  );
 }
